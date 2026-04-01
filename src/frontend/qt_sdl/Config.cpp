@@ -99,6 +99,10 @@ DefaultList<bool> DefaultBools =
     {"3D.Soft.Threaded", true},
     {"3D.GL.HiresCoordinates", true},
     {"LimitFPS", true},
+    {"RA.Enabled", false},
+    {"RA.Hardcore", true},
+    {"RA.Encore", false},
+    {"RA.Unofficial", false},
     {"Instance*.Window*.ShowOSD", true},
     {"Emu.DirectBoot", true},
     {"Instance*.DS.Battery.LevelOkay", true},
@@ -117,7 +121,9 @@ DefaultList<std::string> DefaultStrings =
 {
     {"DLDI.ImagePath",                  "dldi.bin"},
     {"DSi.SD.ImagePath",                "dsisd.bin"},
-    {"Instance*.Firmware.Username",     "melonDS"}
+    {"Instance*.Firmware.Username",     "melonDS"},
+    {"RA.Username",                     ""},
+    {"RA.Token",                        ""}
 };
 
 DefaultList<double> DefaultDoubles =

@@ -60,6 +60,34 @@ set(SOURCES_QT_SDL
 
     LANDialog.cpp
     NetplayDialog.cpp
+    retroachievements/RetroAchievementsManager.cpp
+    retroachievements/RetroAchievementsManager.h
+
+    retroachievements/rcheevos/src/rc_client.c
+    retroachievements/rcheevos/src/rc_compat.c
+    retroachievements/rcheevos/src/rc_util.c
+    retroachievements/rcheevos/src/rc_version.c
+    retroachievements/rcheevos/src/rapi/rc_api_common.c
+    retroachievements/rcheevos/src/rapi/rc_api_info.c
+    retroachievements/rcheevos/src/rapi/rc_api_runtime.c
+    retroachievements/rcheevos/src/rapi/rc_api_user.c
+    retroachievements/rcheevos/src/rcheevos/alloc.c
+    retroachievements/rcheevos/src/rcheevos/condition.c
+    retroachievements/rcheevos/src/rcheevos/condset.c
+    retroachievements/rcheevos/src/rcheevos/consoleinfo.c
+    retroachievements/rcheevos/src/rcheevos/format.c
+    retroachievements/rcheevos/src/rcheevos/lboard.c
+    retroachievements/rcheevos/src/rcheevos/memref.c
+    retroachievements/rcheevos/src/rcheevos/operand.c
+    retroachievements/rcheevos/src/rcheevos/rc_validate.c
+    retroachievements/rcheevos/src/rcheevos/richpresence.c
+    retroachievements/rcheevos/src/rcheevos/runtime.c
+    retroachievements/rcheevos/src/rcheevos/runtime_progress.c
+    retroachievements/rcheevos/src/rcheevos/trigger.c
+    retroachievements/rcheevos/src/rcheevos/value.c
+    retroachievements/rcheevos/src/rhash/hash.c
+    retroachievements/rcheevos/src/rhash/hash_rom.c
+    retroachievements/rcheevos/src/rhash/md5.c
 )
 
 option(USE_QT6 "Use Qt 6 instead of Qt 5" ON)
@@ -183,7 +211,16 @@ endif()
 
 target_include_directories(melonDS PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/..")
+    "${CMAKE_CURRENT_SOURCE_DIR}/.."
+    "${CMAKE_CURRENT_SOURCE_DIR}/retroachievements/rcheevos/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/retroachievements/rcheevos/src")
+
+target_compile_definitions(melonDS PRIVATE
+    RC_CLIENT_SUPPORTS_HASH=1
+    RC_DISABLE_LUA=1
+    RC_HASH_NO_DISC=1
+    RC_HASH_NO_ENCRYPTED=1
+    RC_HASH_NO_ZIP=1)
 
 if (USE_QT6)
     target_include_directories(melonDS PUBLIC ${Qt6Gui_PRIVATE_INCLUDE_DIRS})

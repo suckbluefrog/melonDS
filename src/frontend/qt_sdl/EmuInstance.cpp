@@ -49,6 +49,7 @@
 #include "main.h"
 
 #include "NDSCart/CartSD.h"
+#include "retroachievements/RetroAchievementsManager.h"
 
 using std::make_unique;
 using std::pair;
@@ -125,6 +126,7 @@ EmuInstance::EmuInstance(int inst) : deleting(false),
 
     nds = nullptr;
     //updateConsole();
+    retroAchievementsManager = std::make_unique<RetroAchievements::RetroAchievementsManager>(this);
 
     audioInit();
     inputInit();
@@ -735,6 +737,8 @@ bool EmuInstance::loadState(const std::string& filename)
         Platform::CloseFile(file);
         return false;
     }
+    if (!retroAchievementsManager->doSavestate(backup.get()))
+        Platform::Log(Platform::LogLevel::Warn, "RetroAchievements state backup failed\n");
     // We'll store the backup once we're sure that the state was loaded.
     // Now that we know the file and backup are both good, let's load the new state.
 
@@ -758,6 +762,11 @@ bool EmuInstance::loadState(const std::string& filename)
     { // If we couldn't load the savestate from the buffer...
         Platform::Log(Platform::LogLevel::Error, "Failed to load state file \"%s\" into emulator\n", filename.c_str());
         return false;
+    }
+    if (!retroAchievementsManager->doSavestate(state.get()))
+    {
+        Platform::Log(Platform::LogLevel::Warn, "RetroAchievements state restore failed\n");
+        state->Error = false;
     }
 
     // The backup was made and the state was loaded, so we can store the backup now.
@@ -787,6 +796,8 @@ bool EmuInstance::saveState(const std::string& filename)
 
     // Write the savestate to the in-memory buffer
     nds->DoSavestate(&state);
+    if (!retroAchievementsManager->doSavestate(&state))
+        Platform::Log(Platform::LogLevel::Warn, "RetroAchievements savestate serialization failed\n");
 
     if (state.Error)
     {
@@ -1409,6 +1420,7 @@ void EmuInstance::reset()
     }
 
     initFirmwareSaveManager();
+    retroAchievementsManager->reset();
     if (firmwareSave)
     {
         std::string oldsave = firmwareSave->GetPath();
@@ -1940,6 +1952,7 @@ bool EmuInstance::loadROM(QStringList filepath, bool reset, QString& errorstr)
 
         setBatteryLevels();
         setDateTime();
+        retroAchievementsManager->onGameChanged();
     }
     else
     {
@@ -1947,6 +1960,7 @@ bool EmuInstance::loadROM(QStringList filepath, bool reset, QString& errorstr)
         {
             nds->SetNDSCart(std::move(cart));
             loadCheats();
+            retroAchievementsManager->onGameChanged();
         }
         else
         {
@@ -1980,6 +1994,7 @@ void EmuInstance::ejectCart()
     baseROMDir = "";
     baseROMName = "";
     baseAssetName = "";
+    retroAchievementsManager->onGameStopped();
 }
 
 bool EmuInstance::cartInserted()

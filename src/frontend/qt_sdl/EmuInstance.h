@@ -29,6 +29,11 @@
 #include "Config.h"
 #include "SaveManager.h"
 
+namespace RetroAchievements
+{
+class RetroAchievementsManager;
+}
+
 const int kMaxWindows = 4;
 
 enum
@@ -91,6 +96,8 @@ public:
     int getConsoleType() { return consoleType; }
     EmuThread* getEmuThread() { return emuThread; }
     melonDS::NDS* getNDS() { return nds; }
+    std::string getCurrentROMName() const { return baseROMName; }
+    RetroAchievements::RetroAchievementsManager* getRetroAchievementsManager() { return retroAchievementsManager.get(); }
 
     MainWindow* getMainWindow() { return mainWindow; }
     int getNumWindows() { return numWindows; }
@@ -308,6 +315,7 @@ private:
 
     std::unique_ptr<melonDS::Savestate> backupState;
     bool savestateLoaded;
+    std::unique_ptr<RetroAchievements::RetroAchievementsManager> retroAchievementsManager;
 
     std::unique_ptr<melonDS::ARCodeFile> cheatFile;
     bool cheatsOn;

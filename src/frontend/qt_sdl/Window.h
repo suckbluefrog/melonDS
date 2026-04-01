@@ -158,6 +158,11 @@ private slots:
     void onOpenInterfaceSettings();
     void onInterfaceSettingsFinished(int res);
     void onUpdateInterfaceSettings();
+    void onRetroAchievementsLogin();
+    void onRetroAchievementsToken();
+    void onRetroAchievementsLogout();
+    void onRetroAchievementsEnabled(bool checked);
+    void onRetroAchievementsHardcore(bool checked);
     void onChangeScreenSize();
     void onChangeScreenRotation(QAction* act);
     void onChangeScreenGap(QAction* act);
@@ -273,6 +278,11 @@ public:
     QAction* actFirmwareSettings;
     QAction* actPathSettings;
     QAction* actInterfaceSettings;
+    QAction* actRetroAchievementsEnabled;
+    QAction* actRetroAchievementsLogin;
+    QAction* actRetroAchievementsToken;
+    QAction* actRetroAchievementsLogout;
+    QAction* actRetroAchievementsHardcore;
     QAction* actScreenSize[4];
     QActionGroup* grpScreenRotation;
     QAction* actScreenRotation[screenRot_MAX];

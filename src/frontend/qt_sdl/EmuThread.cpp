@@ -54,6 +54,7 @@
 #include "Savestate.h"
 
 #include "EmuInstance.h"
+#include "retroachievements/RetroAchievementsManager.h"
 
 using namespace melonDS;
 
@@ -306,6 +307,7 @@ void EmuThread::run()
             else
             {
                 nlines = emuInstance->nds->RunFrame();
+                emuInstance->getRetroAchievementsManager()->frameUpdate();
             }
 
             if (emuInstance->ndsSave)
@@ -435,6 +437,7 @@ void EmuThread::run()
             changeWindowTitle(melontitle);
 
             SDL_Delay(75);
+            emuInstance->getRetroAchievementsManager()->idle();
 
             emuInstance->drawScreen();
         }

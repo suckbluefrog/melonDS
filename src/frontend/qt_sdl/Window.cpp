@@ -78,6 +78,7 @@
 
 #include "EmuInstance.h"
 #include "ArchiveUtil.h"
+#include "retroachievements/RetroAchievementsManager.h"
 #include "CameraManager.h"
 #include "Window.h"
 #include "AboutDialog.h"
@@ -654,6 +655,25 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
 
             menu->addSeparator();
 
+            actRetroAchievementsEnabled = menu->addAction("Enable RetroAchievements");
+            actRetroAchievementsEnabled->setCheckable(true);
+            connect(actRetroAchievementsEnabled, &QAction::triggered, this, &MainWindow::onRetroAchievementsEnabled);
+
+            actRetroAchievementsLogin = menu->addAction("RetroAchievements login...");
+            connect(actRetroAchievementsLogin, &QAction::triggered, this, &MainWindow::onRetroAchievementsLogin);
+
+            actRetroAchievementsToken = menu->addAction("RetroAchievements token login...");
+            connect(actRetroAchievementsToken, &QAction::triggered, this, &MainWindow::onRetroAchievementsToken);
+
+            actRetroAchievementsLogout = menu->addAction("RetroAchievements logout");
+            connect(actRetroAchievementsLogout, &QAction::triggered, this, &MainWindow::onRetroAchievementsLogout);
+
+            actRetroAchievementsHardcore = menu->addAction("RetroAchievements hardcore");
+            actRetroAchievementsHardcore->setCheckable(true);
+            connect(actRetroAchievementsHardcore, &QAction::triggered, this, &MainWindow::onRetroAchievementsHardcore);
+
+            menu->addSeparator();
+
             actLimitFramerate = menu->addAction("Limit framerate");
             actLimitFramerate->setCheckable(true);
             connect(actLimitFramerate, &QAction::triggered, this, &MainWindow::onChangeLimitFramerate);
@@ -770,6 +790,9 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
 
         actLimitFramerate->setChecked(emuInstance->doLimitFPS);
         actAudioSync->setChecked(emuInstance->doAudioSync);
+        actRetroAchievementsEnabled->setChecked(emuInstance->getRetroAchievementsManager()->isEnabled());
+        actRetroAchievementsHardcore->setChecked(emuInstance->getRetroAchievementsManager()->isHardcoreEnabled());
+        actRetroAchievementsLogout->setEnabled(emuInstance->getRetroAchievementsManager()->isLoggedIn());
 
         if (emuInstance->instanceID > 0)
         {
@@ -2035,6 +2058,64 @@ void MainWindow::onUpdateInterfaceSettings()
 void MainWindow::onInterfaceSettingsFinished(int res)
 {
     emuThread->emuUnpause();
+}
+
+void MainWindow::onRetroAchievementsLogin()
+{
+    QString username = QInputDialog::getText(this, "RetroAchievements", "Username:", QLineEdit::Normal, QString::fromStdString(globalCfg.GetString("RA.Username")));
+    if (username.isEmpty())
+        return;
+
+    QString password = QInputDialog::getText(this, "RetroAchievements", "Password:", QLineEdit::Password);
+    if (password.isEmpty())
+        return;
+
+    std::string error;
+    if (!emuInstance->getRetroAchievementsManager()->loginWithPassword(username.toStdString(), password.toStdString(), error))
+    {
+        QMessageBox::critical(this, "melonDS", QString::fromStdString(error));
+        return;
+    }
+
+    emuInstance->getRetroAchievementsManager()->onGameChanged();
+    actRetroAchievementsLogout->setEnabled(true);
+}
+
+void MainWindow::onRetroAchievementsToken()
+{
+    QString username = QInputDialog::getText(this, "RetroAchievements", "Username:", QLineEdit::Normal, QString::fromStdString(globalCfg.GetString("RA.Username")));
+    if (username.isEmpty())
+        return;
+
+    QString token = QInputDialog::getText(this, "RetroAchievements", "API token:", QLineEdit::Password, QString::fromStdString(globalCfg.GetString("RA.Token")));
+    if (token.isEmpty())
+        return;
+
+    std::string error;
+    if (!emuInstance->getRetroAchievementsManager()->loginWithToken(username.toStdString(), token.toStdString(), error))
+    {
+        QMessageBox::critical(this, "melonDS", QString::fromStdString(error));
+        return;
+    }
+
+    emuInstance->getRetroAchievementsManager()->onGameChanged();
+    actRetroAchievementsLogout->setEnabled(true);
+}
+
+void MainWindow::onRetroAchievementsLogout()
+{
+    emuInstance->getRetroAchievementsManager()->logout();
+    actRetroAchievementsLogout->setEnabled(false);
+}
+
+void MainWindow::onRetroAchievementsEnabled(bool checked)
+{
+    emuInstance->getRetroAchievementsManager()->setEnabled(checked);
+}
+
+void MainWindow::onRetroAchievementsHardcore(bool checked)
+{
+    emuInstance->getRetroAchievementsManager()->setHardcoreEnabled(checked);
 }
 
 void MainWindow::onChangeScreenSize()
