@@ -1452,6 +1452,9 @@ void MainWindow::onClearRecentFiles()
 
 void MainWindow::loadRecentFilesMenu(bool loadcfg)
 {
+    if (!hasMenu || !recentMenu)
+        return;
+
     if (loadcfg)
     {
         recentFileList.clear();
