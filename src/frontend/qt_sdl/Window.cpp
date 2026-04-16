@@ -141,6 +141,17 @@ QStringList ArchiveExtensions
 #endif
 };
 
+static QString FormatWindowTitlePrefix(int instanceID, int windowID, int instanceCount, int windowCount)
+{
+    if ((instanceCount > 1) && (windowCount > 1))
+        return QString("[p%1:w%2] ").arg(instanceID + 1).arg(windowID + 1);
+    if (instanceCount > 1)
+        return QString("[p%1] ").arg(instanceID + 1);
+    if (windowCount > 1)
+        return QString("[w%1] ").arg(windowID + 1);
+    return QString();
+}
+
 // AAAAAAA
 static bool FileExtensionInList(const QString& filename, const QStringList& extensions, Qt::CaseSensitivity cs = Qt::CaseInsensitive)
 {
@@ -273,7 +284,14 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
                   windowCfg.GetBool("ScreenSwap"),
                   windowCfg.GetInt("ScreenRotation"));
 
-    setWindowTitle("melonDS " MELONDS_VERSION);
+    int configuredWindows = 1;
+    for (int i = 1; i < kMaxWindows; i++)
+    {
+        std::string key = "Window" + std::to_string(i) + ".Enabled";
+        if (localCfg.GetBool(key))
+            configuredWindows++;
+    }
+    setWindowTitle(FormatWindowTitlePrefix(emuInstance->instanceID, windowID, numEmuInstances(), configuredWindows) + "melonDS " MELONDS_VERSION);
     setAttribute(Qt::WA_DeleteOnClose);
     setAcceptDrops(true);
     setFocusPolicy(Qt::ClickFocus);
@@ -2281,24 +2299,7 @@ void MainWindow::onTitleUpdate(QString title)
     const QString originalTitle = title;
     int numinst = numEmuInstances();
     int numwin = emuInstance->getNumWindows();
-    if ((numinst > 1) && (numwin > 1))
-    {
-        // add player/window prefix
-        QString prefix = QString("[p%1:w%2] ").arg(emuInstance->instanceID+1).arg(windowID+1);
-        title = prefix + title;
-    }
-    else if (numinst > 1)
-    {
-        // add player prefix
-        QString prefix = QString("[p%1] ").arg(emuInstance->instanceID+1);
-        title = prefix + title;
-    }
-    else if (numwin > 1)
-    {
-        // add window prefix
-        QString prefix = QString("[w%1] ").arg(windowID+1);
-        title = prefix + title;
-    }
+    title = FormatWindowTitlePrefix(emuInstance->instanceID, windowID, numinst, numwin) + title;
 
     Platform::Log(Platform::LogLevel::Info,
                   "WindowDebug: onTitleUpdate id=%d numinst=%d numwin=%d original=%s final=%s\n",
