@@ -1879,6 +1879,8 @@ bool EmuInstance::loadROM(QStringList filepath, bool reset, QString& errorstr)
     baseROMDir = basepath;
     baseROMName = romname;
     baseAssetName = romname.substr(0, romname.rfind('.'));
+    currentROMData.assign(filedata.get(), filedata.get() + filelen);
+    currentROMLength = filelen;
 
     u32 savelen = 0;
     std::unique_ptr<u8[]> savedata = nullptr;
@@ -1994,6 +1996,8 @@ void EmuInstance::ejectCart()
     baseROMDir = "";
     baseROMName = "";
     baseAssetName = "";
+    currentROMData.clear();
+    currentROMLength = 0;
     retroAchievementsManager->onGameStopped();
 }
 

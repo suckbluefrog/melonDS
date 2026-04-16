@@ -2,12 +2,12 @@
 
 #include <string>
 
-#include <QCoreApplication>
 #include <QEventLoop>
-#include <QMetaObject>
+#include <QFile>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QProcess>
 #include <QThread>
 #include <QUrl>
 
@@ -36,6 +36,9 @@ constexpr unsigned int kColorInfo = 0;
 constexpr unsigned int kColorSuccess = 0xA0FFA0;
 constexpr unsigned int kColorWarn = 0xFFE080;
 constexpr unsigned int kColorError = 0xFFA0A0;
+constexpr char kBatoceraAchievementSoundEnv[] = "BATOCERA_MELONDS_ACHIEVEMENT_SOUND";
+constexpr char kBatoceraAchievementSoundRoot[] = "/usr/share/libretro/assets/sounds";
+constexpr char kDefaultAchievementSound[] = "mario-1up";
 
 uint32_t translateAddress(uint32_t consoleId, uint32_t address, bool& ok)
 {
@@ -58,6 +61,50 @@ uint32_t translateAddress(uint32_t consoleId, uint32_t address, bool& ok)
     }
 
     return 0;
+}
+
+QString getBatoceraAchievementSoundPath()
+{
+    QByteArray soundValue = qgetenv(kBatoceraAchievementSoundEnv);
+    QString soundName = soundValue.isEmpty() ? QString::fromLatin1(kDefaultAchievementSound) : QString::fromUtf8(soundValue).trimmed();
+    if (soundName.isEmpty())
+        return {};
+
+    if (soundName.compare(QStringLiteral("0"), Qt::CaseInsensitive) == 0 ||
+        soundName.compare(QStringLiteral("false"), Qt::CaseInsensitive) == 0 ||
+        soundName.compare(QStringLiteral("none"), Qt::CaseInsensitive) == 0)
+    {
+        return {};
+    }
+
+    if (soundName.contains('/'))
+        return QFile::exists(soundName) ? soundName : QString{};
+
+    const QString root = QString::fromLatin1(kBatoceraAchievementSoundRoot);
+    const QString oggPath = root + QLatin1Char('/') + soundName + QStringLiteral(".ogg");
+    if (QFile::exists(oggPath))
+        return oggPath;
+
+    const QString wavPath = root + QLatin1Char('/') + soundName + QStringLiteral(".wav");
+    if (QFile::exists(wavPath))
+        return wavPath;
+
+    return {};
+}
+
+void playBatoceraAchievementSound()
+{
+    const QString soundPath = getBatoceraAchievementSoundPath();
+    if (soundPath.isEmpty())
+        return;
+
+    const QString pwPlay = QStringLiteral("/usr/bin/pw-play");
+    if (QFile::exists(pwPlay) && QProcess::startDetached(pwPlay, {soundPath}))
+        return;
+
+    const QString paPlay = QStringLiteral("/usr/bin/paplay");
+    if (QFile::exists(paPlay))
+        QProcess::startDetached(paPlay, {soundPath});
 }
 
 }
@@ -311,10 +358,30 @@ bool RetroAchievementsManager::loadCurrentGame(std::string& error)
     std::string romName = emuInstance->getCurrentROMName();
     if (romName.empty())
         romName = "game.nds";
+    const u8* romData = emuInstance->getCurrentROMData();
+    const u32 romLength = emuInstance->getCurrentROMLength();
+    if (!romData || !romLength)
+    {
+        error = "no original ROM data available";
+        return false;
+    }
 
     SyncResult result;
-    rc_client_begin_identify_and_load_game(client, consoleId, romName.c_str(), cart->GetROM(), cart->GetROMLength(), &RetroAchievementsManager::SyncCallback, &result);
-    if (!result.called || result.result != RC_OK)
+    rc_client_begin_identify_and_load_game(client, consoleId, romName.c_str(), romData, romLength, &RetroAchievementsManager::SyncCallback, &result);
+    for (int waitedMs = 0; !result.called && waitedMs < 10000; waitedMs += 10)
+    {
+        rc_client_idle(client);
+        QThread::msleep(10);
+    }
+
+    if (!result.called)
+    {
+        error = "timed out loading game data";
+        gameLoaded = false;
+        return false;
+    }
+
+    if (result.result != RC_OK)
     {
         error = result.error.empty() ? "failed to load game data" : result.error;
         gameLoaded = false;
@@ -339,6 +406,7 @@ void RetroAchievementsManager::handleEvent(const rc_client_event_t* event)
     switch (event->type)
     {
     case RC_CLIENT_EVENT_ACHIEVEMENT_TRIGGERED:
+        playBatoceraAchievementSound();
         if (event->achievement && event->achievement->title)
             emuInstance->osdAddMessage(kColorSuccess, "Achievement unlocked: %s", event->achievement->title);
         break;
@@ -431,10 +499,10 @@ int RetroAchievementsManager::performRequest(const rc_api_request_t* request, st
         reply->deleteLater();
     };
 
-    if (QThread::currentThread() == QCoreApplication::instance()->thread())
-        doRequest();
-    else
-        QMetaObject::invokeMethod(QCoreApplication::instance(), doRequest, Qt::BlockingQueuedConnection);
+    // Startup ROM loading blocks the main Qt thread waiting for the emulation thread.
+    // Sending a blocking invoke back to the main thread from that emulation thread
+    // deadlocks RetroAchievements login and game identification during boot.
+    doRequest();
 
     return statusCode;
 }

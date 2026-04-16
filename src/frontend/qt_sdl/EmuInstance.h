@@ -19,6 +19,8 @@
 #ifndef EMUINSTANCE_H
 #define EMUINSTANCE_H
 
+#include <vector>
+
 #include <SDL2/SDL.h>
 
 #include "Platform.h"
@@ -97,6 +99,8 @@ public:
     EmuThread* getEmuThread() { return emuThread; }
     melonDS::NDS* getNDS() { return nds; }
     std::string getCurrentROMName() const { return baseROMName; }
+    const melonDS::u8* getCurrentROMData() const { return currentROMData.empty() ? nullptr : currentROMData.data(); }
+    melonDS::u32 getCurrentROMLength() const { return currentROMLength; }
     RetroAchievements::RetroAchievementsManager* getRetroAchievementsManager() { return retroAchievementsManager.get(); }
 
     MainWindow* getMainWindow() { return mainWindow; }
@@ -287,6 +291,8 @@ private:
     std::string baseROMDir;
     std::string baseROMName;
     std::string baseAssetName;
+    std::vector<melonDS::u8> currentROMData;
+    melonDS::u32 currentROMLength = 0;
     bool changeCart;
     std::unique_ptr<melonDS::NDSCart::CartCommon> nextCart;
 
