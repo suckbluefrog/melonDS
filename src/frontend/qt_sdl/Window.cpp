@@ -303,8 +303,7 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
         setStyleSheet("QMenuBar::item { padding: 4px 8px; }");
 #endif
 
-    //hasMenu = (!parent);
-    hasMenu = true;
+    hasMenu = (!parent);
 
     if (hasMenu)
     {
