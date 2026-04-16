@@ -1,5 +1,6 @@
 #include "RetroAchievementsManager.h"
 
+#include <algorithm>
 #include <string>
 
 #include <QEventLoop>
@@ -113,7 +114,7 @@ namespace RetroAchievements
 {
 
 RetroAchievementsManager::RetroAchievementsManager(EmuInstance* emuInstance)
-    : emuInstance(emuInstance), client(nullptr), gameLoaded(false)
+    : emuInstance(emuInstance), client(nullptr), gameLoaded(false), pollDivider(1), pollCounter(0)
 {
     client = rc_client_create(&RetroAchievementsManager::ReadMemory, &RetroAchievementsManager::ServerCall);
     rc_client_set_userdata(client, this);
@@ -226,6 +227,8 @@ void RetroAchievementsManager::logout()
 
 void RetroAchievementsManager::onGameChanged()
 {
+    resetPollState();
+
     if (!isEnabled())
     {
         onGameStopped();
@@ -255,10 +258,12 @@ void RetroAchievementsManager::onGameStopped()
 {
     rc_client_unload_game(client);
     gameLoaded = false;
+    resetPollState();
 }
 
 void RetroAchievementsManager::reset()
 {
+    resetPollState();
     if (gameLoaded)
         rc_client_reset(client);
 }
@@ -266,7 +271,13 @@ void RetroAchievementsManager::reset()
 void RetroAchievementsManager::frameUpdate()
 {
     if (gameLoaded && rc_client_is_processing_required(client))
-        rc_client_do_frame(client);
+    {
+        if (++pollCounter >= pollDivider)
+        {
+            rc_client_do_frame(client);
+            pollCounter = 0;
+        }
+    }
 }
 
 void RetroAchievementsManager::idle()
@@ -316,6 +327,8 @@ void RetroAchievementsManager::applyConfig()
     rc_client_set_hardcore_enabled(client, emuInstance->getGlobalConfig().GetBool("RA.Hardcore"));
     rc_client_set_encore_mode_enabled(client, emuInstance->getGlobalConfig().GetBool("RA.Encore"));
     rc_client_set_unofficial_enabled(client, emuInstance->getGlobalConfig().GetBool("RA.Unofficial"));
+    pollDivider = std::clamp(emuInstance->getGlobalConfig().GetInt("RA.PollDivider"), 1, 4);
+    resetPollState();
 }
 
 bool RetroAchievementsManager::ensureLoggedIn(std::string& error)
@@ -521,6 +534,11 @@ void RetroAchievementsManager::clearCredentials()
     cfg.SetString("RA.Username", "");
     cfg.SetString("RA.Token", "");
     Config::Save();
+}
+
+void RetroAchievementsManager::resetPollState()
+{
+    pollCounter = 0;
 }
 
 uint32_t RetroAchievementsManager::ReadMemory(uint32_t address, uint8_t* buffer, uint32_t numBytes, rc_client_t* client)

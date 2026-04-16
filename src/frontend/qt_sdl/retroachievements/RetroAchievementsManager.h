@@ -52,6 +52,8 @@ private:
     EmuInstance* emuInstance;
     rc_client_t* client;
     bool gameLoaded;
+    int pollDivider;
+    int pollCounter;
 
     void applyConfig();
     bool ensureLoggedIn(std::string& error);
@@ -60,6 +62,7 @@ private:
     int performRequest(const rc_api_request_t* request, std::string& responseBody);
     void saveCredentials(const std::string& username, const std::string& token);
     void clearCredentials();
+    void resetPollState();
 
     static uint32_t ReadMemory(uint32_t address, uint8_t* buffer, uint32_t numBytes, rc_client_t* client);
     static void ServerCall(const rc_api_request_t* request, void (*callback)(const rc_api_server_response_t*, void*), void* callbackData, rc_client_t* client);

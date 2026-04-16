@@ -67,6 +67,7 @@ DefaultList<int> DefaultInts =
     {"Mic.InputType", 1},
     {"Mouse.HideSeconds", 5},
     {"Instance*.DSi.Battery.Level", 0xF},
+    {"RA.PollDivider", 1},
 #ifdef GDBSTUB_ENABLED
     {"Instance*.Gdb.ARM7.Port", 3334},
     {"Instance*.Gdb.ARM9.Port", 3333},
@@ -91,6 +92,7 @@ RangeList IntRanges =
     {"Instance*.Window*.ScreenAspectBot", {0, AspectRatiosNum-1}},
     {"MP.AudioMode", {0, 2}},
     {"LAN.HostNumPlayers", {2, 16}},
+    {"RA.PollDivider", {1, 4}},
 };
 
 DefaultList<bool> DefaultBools =
