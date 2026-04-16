@@ -303,7 +303,7 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
         setStyleSheet("QMenuBar::item { padding: 4px 8px; }");
 #endif
 
-    hasMenu = (!parent);
+    hasMenu = true;
 
     if (hasMenu)
     {
@@ -723,6 +723,8 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
         }
 
         setMenuBar(menubar);
+        if (parent)
+            menubar->setFixedHeight(0);
 
         if (localCfg.GetString("Firmware.Username") == "Arisotura")
             actMPNewInstance->setText("Fart");
