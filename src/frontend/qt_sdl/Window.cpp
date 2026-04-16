@@ -723,7 +723,14 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
         }
 
         setMenuBar(menubar);
-        if (parent)
+
+        const bool collapseMenuBar =
+            parent ||
+            (windowID == 0 &&
+             configuredWindows > 1 &&
+             windowCfg.GetInt("ScreenLayout") == screenLayout_Horizontal &&
+             windowCfg.GetInt("ScreenSizing") == screenSizing_TopOnly);
+        if (collapseMenuBar)
             menubar->setFixedHeight(0);
 
         if (localCfg.GetString("Firmware.Username") == "Arisotura")
