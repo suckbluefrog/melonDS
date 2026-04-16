@@ -884,10 +884,28 @@ ScreenPanelGL::~ScreenPanelGL()
 bool ScreenPanelGL::createContext()
 {
     std::optional<WindowInfo> windowinfo = getWindowInfo();
+    MainWindow* ourwin = (MainWindow*)parentWidget();
+
+    if (!windowinfo.has_value())
+    {
+        Platform::Log(Platform::LogLevel::Error, "WindowDebug: GL createContext id=%d missing window info qpa=%s\n",
+                      ourwin ? ourwin->getWindowID() : -1,
+                      QGuiApplication::platformName().toStdString().c_str());
+    }
+    else
+    {
+        Platform::Log(Platform::LogLevel::Info,
+                      "WindowDebug: GL createContext id=%d type=%d size=%ux%u scale=%.2f qpa=%s\n",
+                      ourwin ? ourwin->getWindowID() : -1,
+                      static_cast<int>(windowinfo->type),
+                      windowinfo->surface_width,
+                      windowinfo->surface_height,
+                      windowinfo->surface_scale,
+                      QGuiApplication::platformName().toStdString().c_str());
+    }
 
     // if our parent window is parented to another window, we will
     // share our OpenGL context with that window
-    MainWindow* ourwin = (MainWindow*)parentWidget();
     MainWindow* parentwin = (MainWindow*)parentWidget()->parentWidget();
     //if (parentwin)
     if (ourwin->getWindowID() != 0)
@@ -906,6 +924,10 @@ bool ScreenPanelGL::createContext()
                 glContext->DoneCurrent();
     }
 
+    Platform::Log(Platform::LogLevel::Info, "WindowDebug: GL createContext id=%d result=%d sharedParent=%p\n",
+                  ourwin ? ourwin->getWindowID() : -1,
+                  glContext != nullptr,
+                  parentwin);
     return glContext != nullptr;
 }
 
