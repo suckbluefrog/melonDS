@@ -271,19 +271,6 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
 
     showOSD = windowCfg.GetBool("ShowOSD");
 
-    const QString platformName = QGuiApplication::platformName();
-    Platform::Log(Platform::LogLevel::Info,
-                  "WindowDebug: MainWindow ctor id=%d parent=%p qpa=%s enabled=%d showOSD=%d layout=%d sizing=%d swap=%d rotation=%d\n",
-                  windowID,
-                  parent,
-                  platformName.toStdString().c_str(),
-                  windowCfg.GetBool("Enabled"),
-                  showOSD,
-                  windowCfg.GetInt("ScreenLayout"),
-                  windowCfg.GetInt("ScreenSizing"),
-                  windowCfg.GetBool("ScreenSwap"),
-                  windowCfg.GetInt("ScreenRotation"));
-
     int configuredWindows = 1;
     for (int i = 1; i < kMaxWindows; i++)
     {
@@ -874,20 +861,12 @@ void MainWindow::osdAddMessage(unsigned int color, const char* msg)
 void MainWindow::saveEnabled(bool enabled)
 {
     if (enabledSaved) return;
-    Platform::Log(Platform::LogLevel::Info, "WindowDebug: saveEnabled id=%d enabled=%d\n", windowID, enabled);
     windowCfg.SetBool("Enabled", enabled);
     enabledSaved = true;
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    Platform::Log(Platform::LogLevel::Info,
-                  "WindowDebug: closeEvent begin id=%d isMain=%d children=%d visible=%d title=%s\n",
-                  windowID,
-                  windowID == 0,
-                  findChildren<MainWindow *>(nullptr, Qt::FindDirectChildrenOnly).size(),
-                  isVisible(),
-                  windowTitle().toStdString().c_str());
     if (emuInstance)
     {
         if (windowID == 0)
@@ -925,18 +904,6 @@ void MainWindow::createScreenPanel()
     hasOGL = globalCfg.GetBool("Screen.UseGL") ||
             (globalCfg.GetInt("3D.Renderer") != renderer3D_Software);
 
-    Platform::Log(Platform::LogLevel::Info,
-                  "WindowDebug: createScreenPanel id=%d hasOGL=%d useGL=%d renderer=%d enabled=%d layout=%d sizing=%d geom=%dx%d\n",
-                  windowID,
-                  hasOGL,
-                  globalCfg.GetBool("Screen.UseGL"),
-                  globalCfg.GetInt("3D.Renderer"),
-                  windowCfg.GetBool("Enabled"),
-                  windowCfg.GetInt("ScreenLayout"),
-                  windowCfg.GetInt("ScreenSizing"),
-                  width(),
-                  height());
-
     if (hasOGL)
     {
         ScreenPanelGL* panelGL = new ScreenPanelGL(this);
@@ -964,7 +931,6 @@ void MainWindow::createScreenPanel()
             emuThread->returnGL();
 
         panel = panelGL;
-        Platform::Log(Platform::LogLevel::Info, "WindowDebug: createScreenPanel id=%d using GL panel=%p\n", windowID, panel);
     }
 
     if (!hasOGL)
@@ -972,7 +938,6 @@ void MainWindow::createScreenPanel()
         ScreenPanelNative* panelNative = new ScreenPanelNative(this);
         panel = panelNative;
         panel->show();
-        Platform::Log(Platform::LogLevel::Info, "WindowDebug: createScreenPanel id=%d using native panel=%p\n", windowID, panel);
     }
     setCentralWidget(panel);
 
@@ -2307,18 +2272,9 @@ void MainWindow::onTitleUpdate(QString title)
 {
     if (!emuInstance) return;
 
-    const QString originalTitle = title;
     int numinst = numEmuInstances();
     int numwin = emuInstance->getNumWindows();
     title = FormatWindowTitlePrefix(emuInstance->instanceID, windowID, numinst, numwin) + title;
-
-    Platform::Log(Platform::LogLevel::Info,
-                  "WindowDebug: onTitleUpdate id=%d numinst=%d numwin=%d original=%s final=%s\n",
-                  windowID,
-                  numinst,
-                  numwin,
-                  originalTitle.toStdString().c_str(),
-                  title.toStdString().c_str());
     setWindowTitle(title);
 }
 

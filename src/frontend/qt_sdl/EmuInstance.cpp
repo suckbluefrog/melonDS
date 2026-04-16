@@ -188,11 +188,8 @@ std::string EmuInstance::instanceFileSuffix()
 
 void EmuInstance::createWindow(int id)
 {
-    const int requestedId = id;
     if (numWindows >= kMaxWindows)
     {
-        Platform::Log(Platform::LogLevel::Error, "WindowDebug: refusing createWindow(requested=%d) numWindows=%d max=%d\n",
-                      requestedId, numWindows, kMaxWindows);
         // TODO
         return;
     }
@@ -210,14 +207,7 @@ void EmuInstance::createWindow(int id)
     if (id == -1)
         return;
     if (windowList[id])
-    {
-        Platform::Log(Platform::LogLevel::Warn, "WindowDebug: createWindow(requested=%d resolved=%d) skipped existing window\n",
-                      requestedId, id);
         return;
-    }
-
-    Platform::Log(Platform::LogLevel::Info, "WindowDebug: createWindow(requested=%d resolved=%d) pre numWindows=%d useGL=%d renderer=%d\n",
-                  requestedId, id, numWindows, globalCfg.GetBool("Screen.UseGL"), globalCfg.GetInt("3D.Renderer"));
 
     MainWindow* win = new MainWindow(id, this, mainWindow ? mainWindow : topWindow);
     if (!topWindow) topWindow = win;
@@ -225,17 +215,11 @@ void EmuInstance::createWindow(int id)
     windowList[id] = win;
     numWindows++;
 
-    Platform::Log(Platform::LogLevel::Info, "WindowDebug: createWindow(resolved=%d) post numWindows=%d hasOpenGL=%d parent=%p main=%p top=%p\n",
-                  id, numWindows, win->hasOpenGL(), mainWindow ? mainWindow->parentWidget() : nullptr, mainWindow, topWindow);
-
     emuThread->attachWindow(win);
 
     // if creating a secondary window, we may need to initialize its OpenGL context here
     if (win->hasOpenGL() && (id != 0))
-    {
-        Platform::Log(Platform::LogLevel::Info, "WindowDebug: initContext for secondary window id=%d\n", id);
         emuThread->initContext(id);
-    }
 
     bool enable = (numWindows < kMaxWindows);
     doOnAllWindows([=](MainWindow* win)
@@ -250,9 +234,6 @@ void EmuInstance::deleteWindow(int id, bool close)
 
     MainWindow* win = windowList[id];
     if (!win) return;
-
-    Platform::Log(Platform::LogLevel::Info, "WindowDebug: deleteWindow(id=%d close=%d) hasOpenGL=%d numWindows=%d\n",
-                  id, close, win->hasOpenGL(), numWindows);
 
     if (win->hasOpenGL())
         emuThread->deinitContext(id);
